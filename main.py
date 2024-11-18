@@ -12,7 +12,7 @@ import pymysql
 # http://127.0.0.1:5000/login
 
 app = Flask(__name__)
-app.secret_key = 'supersecretkey'  # Replace with a more secure key in production
+app.secret_key = 'key'
 
 # Configure the MySQL database connection
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/lovejoy_db'
@@ -33,10 +33,10 @@ app.config['MAIL_PASSWORD'] = sender_security_sequence
 
 mail = Mail(app)
 
-# Serializer for generating tokens
+# Serialiser for generating tokens
 s = URLSafeTimedSerializer(app.secret_key)
 
-# Initialize the database
+# Initialise the database
 db = SQLAlchemy(app)
 
 
@@ -57,18 +57,7 @@ class User(db.Model):
 class RegistrationForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired(), Length(min=2, max=50)])
     email = StringField('Email', validators=[DataRequired(), Email()])
-    password = PasswordField(
-        'Password',
-        validators=[
-            DataRequired(),
-            Length(min=8),  # Minimum length of 8 characters
-            Regexp(
-                r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$',
-                message="Password must contain at least one uppercase letter, one lowercase letter, one digit, "
-                        "and one special character."
-            )
-        ]
-    )
+    password = PasswordField('Password', validators=[DataRequired(), Length(min=8)])
     # Security question dropdown
     security_question = SelectField(
         'Security Question',
@@ -81,7 +70,6 @@ class RegistrationForm(FlaskForm):
         ],
         validators=[DataRequired()]
     )
-
     security_answer = StringField('Your Answer', validators=[DataRequired(), Length(min=2, max=50)])
     phone = StringField('Contact Number', validators=[DataRequired(), Length(min=10, max=15)])
     submit = SubmitField('Register')
