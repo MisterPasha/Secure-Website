@@ -149,7 +149,7 @@ def register():
         token = s.dumps(email, salt='email-confirm')
 
         # Send the verification email
-        msg = Message('Confirm Your Email', sender='gorillaz99@mail.ru', recipients=[email])
+        msg = Message('Confirm Your Email', sender=sender_email, recipients=[email])
         link = url_for('confirm_email', token=token, _external=True)
         msg.body = f'Thank you for registering at Lovejoy! Please click the link to verify your email: {link}'
         mail.send(msg)
