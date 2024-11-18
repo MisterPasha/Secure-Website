@@ -18,7 +18,7 @@ app.secret_key = 'supersecretkey'  # Replace with a more secure key in productio
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/lovejoy_db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-with open('C:\Sussex\Programming\Personal_data\data.txt', 'r') as file:
+with open('data.txt', 'r') as file:
     # Read all lines in the file
     content = file.read()
     sender_email = content[:28]
