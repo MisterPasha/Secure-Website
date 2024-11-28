@@ -146,17 +146,33 @@
             </p>
 
             <p>
-                {{ form.security_question.label }}<br>
-                {{ form.security_question() }}
-                {% for error in form.security_question.errors %}
+                {{ form.security_question1.label }}<br>
+                {{ form.security_question1() }}
+                {% for error in form.security_question1.errors %}
                     <span>{{ error }}</span>
                 {% endfor %}
             </p>
 
             <p>
-                {{ form.security_answer.label }}<br>
-                {{ form.security_answer(size=32) }}
-                {% for error in form.security_answer.errors %}
+                {{ form.security_answer1.label }}<br>
+                {{ form.security_answer1(size=32) }}
+                {% for error in form.security_answer1.errors %}
+                    <span>{{ error }}</span>
+                {% endfor %}
+            </p>
+
+            <p>
+                {{ form.security_question2.label }}<br>
+                {{ form.security_question2() }}
+                {% for error in form.security_question2.errors %}
+                    <span>{{ error }}</span>
+                {% endfor %}
+            </p>
+
+            <p>
+                {{ form.security_answer2.label }}<br>
+                {{ form.security_answer2(size=32) }}
+                {% for error in form.security_answer2.errors %}
                     <span>{{ error }}</span>
                 {% endfor %}
             </p>

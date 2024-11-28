@@ -18,7 +18,7 @@ def password_recovery():
         user = User.query.filter_by(email=email).first()
         if user:
             # Render the form to verify the security question
-            return render_template('verifySecurityQuestion.html', email=email, question=user.security_question)
+            return render_template('verifySecurityQuestion.html', email=email, question=user.security_question1)
         else:
             flash('Email address not found.', 'danger')
             return redirect(url_for('email.password_recovery'))
@@ -34,8 +34,9 @@ def verify_security_question():
     # Retrieve the user from the database
     user = User.query.filter_by(email=email).first()
     if user:
+        print(user.security_answer1)
         # Check if the security answer is correct
-        if check_password_hash(user.security_answer, security_answer):
+        if check_password_hash(user.security_answer1, security_answer):
             # Generate a token for the password reset link
             token = s.dumps(email, salt='password-recovery')
 
