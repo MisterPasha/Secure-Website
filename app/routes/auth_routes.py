@@ -37,16 +37,23 @@ def validate_password(password, email=None, name=None):
     # Check for common passwords (using a sample list)
     elif password.lower() in common_passwords:
         return "Password is too common. Please choose a stronger password."
+    # Check for password containing email part
     elif email:
         local_part = email.split('@')[0]
         if local_part.lower() in password.lower():
             return "Password must not contain parts of your email address."
+    # Check for password containing user's name
     elif name:
         if name.lower() in password.lower():
             return "Password must not contain your name."
-
     # Passed all checks
     return True
+
+
+def like_old_password(new_password, old_password):
+    hash = generate_password_hash("heyhey")
+    print(f"Hashes: {check_password_hash('heyhey', hash)}")
+    return check_password_hash(old_password, new_password)
 
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
@@ -83,7 +90,7 @@ def register():
             return redirect(url_for('auth.register'))
 
         if validate_password(password, email, name) is not True:
-            message = validate_password(password, email)
+            message = validate_password(password, email, name)
             flash(message)
             return redirect(url_for('auth.register'))
 
@@ -191,6 +198,12 @@ def login():
     return render_template('login.html', form=form)
 
 
+@auth_bp.route('/logout')
+def logout():
+    session.clear()  # Clear all session data
+    return redirect(url_for('auth.login'))
+
+
 @auth_bp.route('/verify-code', methods=['GET', 'POST'])
 def verify_code():
     if 'verification_code' not in session or 'user_id' not in session:
@@ -218,7 +231,6 @@ def request_evaluation():
     if 'user_id' not in session:
         flash('Please log in to access this page.', 'danger')
         return redirect(url_for('auth.login'))
-
     return render_template('requestEvaluation.html')
 
 
@@ -238,9 +250,13 @@ def reset_password(token):
 
         if user:
             # Validate new password
-            if not validate_password(new_password):
-                flash("Password must be at least 8 characters long and contain at least one uppercase letter, "
-                      "one lowercase letter, one digit, and one special character (@$!%*?&).")
+            if validate_password(new_password, email, user.name) is not True:
+                message = validate_password(new_password, email, user.name)
+                flash(message)
+                return redirect(url_for('auth.reset_password', token=token))
+            # Compare if new and old passwords are the same
+            elif like_old_password(new_password, user.password):
+                flash("Your new password cannot be like your old password, please change")
                 return redirect(url_for('auth.reset_password', token=token))
             elif not check_password_hash(user.security_answer2, security_answer):
                 flash("Incorrect Security Answer, please try again")
