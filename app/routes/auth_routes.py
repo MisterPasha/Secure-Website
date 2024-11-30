@@ -63,6 +63,19 @@ def like_old_password(new_password, old_password):
     return check_password_hash(old_password, new_password)
 
 
+def validate_email(email):
+    pattern = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
+    return re.match(pattern, email) and email < 100
+
+
+def validate_name(name):
+    return re.match(r'^[a-zA-Z]+$', name)
+
+
+def validate_phone(phone):
+    return re.match(r'^\+?[0-9]{10,15}$', phone)
+
+
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
     sec_questions1 = {
@@ -95,8 +108,16 @@ def register():
         if existing_user:
             flash("An account with this email already exists.")
             return redirect(url_for('auth.register'))
-
-        if validate_password(password, email, name) is not True:
+        elif not validate_email(email):
+            flash("Please enter a valid email address (e.g. example@email.uk)")
+            return redirect(url_for('auth.register'))
+        elif not validate_name(name):
+            flash("Please enter only First Name")
+            return redirect(url_for('auth.register'))
+        elif not validate_phone(phone):
+            flash("Please enter a valid phone number")
+            return redirect(url_for('auth.register'))
+        elif validate_password(password, email, name) is not True:
             message = validate_password(password, email, name)
             flash(message)
             return redirect(url_for('auth.register'))
@@ -123,11 +144,6 @@ def register():
         db.session.add(new_user)
         db.session.commit()  # Save the user to the database
 
-        print(f"security answers: '{security_answer1}', '{security_answer2}'")
-        print(f"hashes:")
-        print(hashed_security_answer1)
-        print(hashed_security_answer2)
-
         # Generate a token for email verification
         token = s.dumps(email, salt='email-confirm')
 
@@ -151,8 +167,6 @@ def login():
     form = LoginForm()
     new_captcha_dict = captcha.create()
     global show_captcha
-    #show_captcha = False
-    print(show_captcha)
     if form.validate_on_submit():  # Check if form is valid and submitted
         email = form.email.data
         password = form.password.data
@@ -185,13 +199,11 @@ def login():
                         db.session.commit()
                         show_captcha = False
                         flash('CAPTCHA solved! Please try logging in again.', 'success')
-                        #return redirect(url_for('auth.login'))
                         return render_template('login.html', captcha=new_captcha_dict, form=form, show_captcha=show_captcha)
                     else:
                         show_captcha = True
                         new_captcha_dict = captcha.create()
                         flash('Incorrect CAPTCHA. Please try again.', 'warning')
-                        #return redirect(url_for('auth.login'))
                         return render_template('login.html', captcha=new_captcha_dict, form=form, show_captcha=show_captcha)
 
             # Check the password
