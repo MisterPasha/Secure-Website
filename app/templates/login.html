@@ -122,7 +122,7 @@
             {% endif %}
         {% endwith %}
 
-        <form method="POST">
+        <form  action="{{ url_for('auth.login') }}" method="POST">
             {{ form.hidden_tag() }}
 
             <p>
@@ -140,6 +140,11 @@
                     <span>{{ error }}</span>
                 {% endfor %}
             </p>
+            {% if show_captcha and captcha %}
+            <p>
+                {{ captcha_html(captcha) | safe }}
+            </p>
+            {% endif %}
 
             <button type="submit" class="btn">Login</button>
         </form>

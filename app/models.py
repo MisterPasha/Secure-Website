@@ -15,3 +15,14 @@ class User(db.Model):
     security_answer2 = db.Column(db.String(500), nullable=False)
     failed_attempts = db.Column(db.Integer, nullable=False, default=0)
     lockout_until = db.Column(db.DateTime, nullable=True)
+
+
+class Requests(db.Model):
+    __tablename__ = 'requests'
+    request_id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # Primary key
+    id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # IDs of the users
+    comment = db.Column(db.Text, nullable=False)  # Comment field for request details
+    contact_method = db.Column(db.String(50), nullable=False)  # Preferred contact method (email or phone)
+    filename = db.Column(db.String(255), nullable=False)  # Uploaded file name
+    # Define a relationship with the User model
+    user = db.relationship('User', backref=db.backref('requests', lazy=True))

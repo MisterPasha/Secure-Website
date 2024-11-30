@@ -5,9 +5,67 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Request Evaluation</title>
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f8ff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            max-width: 500px;
+            width: 100%;
+            text-align: left;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        label {
+            font-weight: bold;
+            display: block;
+            margin: 10px 0 5px;
+        }
+
+        textarea, select, input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+
         .logout-btn {
             background-color: #007BFF;
             color: white;
+            display: block;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            width: 100%;
             padding: 10px 15px;
             text-decoration: none;
             border: none;
@@ -22,12 +80,35 @@
     </style>
 </head>
 <body>
-    <h1>Request Evaluation</h1>
-    <p>Welcome to the Request Evaluation page!</p>
+    <div class="container">
+        <h1>Request Evaluation</h1>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <ul>
+            {% for category, message in messages %}
+                <li class="alert alert-{{ category }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endwith %}
+        <form method="POST" enctype="multipart/form-data">
+            <label for="comment">Details of the Object and Request:</label>
+            <textarea id="comment" name="comment" rows="4" required></textarea>
 
-    <!-- Logout Button -->
-    <form method="GET" action="{{ url_for('auth.logout') }}">
-        <button type="submit" class="logout-btn">Logout</button>
-    </form>
+            <label for="preferred_contact">Preferred Method of Contact:</label>
+            <select id="preferred_contact" name="preferred_contact" required>
+                <option value="email">Email</option>
+                <option value="phone">Phone</option>
+            </select>
+
+            <label for="photo">Upload a Photo of the Object:</label>
+            <input type="file" id="photo" name="photo" accept="image/*" required>
+
+            <button type="submit" class="btn">Submit Request</button>
+        </form>
+        <form method="GET" action="{{ url_for('auth.logout') }}">
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
+    </div>
 </body>
 </html>
