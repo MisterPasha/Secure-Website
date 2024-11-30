@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Requests</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f8ff;
+            padding: 20px;
+        }
+        .request {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #fff;
+        }
+        .request img {
+            max-width: 200px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>All Requests</h1>
+    {% if requests %}
+        {% for request in requests %}
+            <div class="request">
+                <p><strong>User ID:</strong> {{ request.id }}</p>
+                <p><strong>Comment:</strong> {{ request.comment }}</p>
+                <p><strong>Contact Method:</strong> {{ request.contact_method }}</p>
+                <p><strong>Image:</strong></p>
+                <img src="{{ url_for('uploaded_file', filename=request.filename) }}" alt="Uploaded Image">
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No requests found.</p>
+    {% endif %}
+    <form method="GET" action="{{ url_for('auth.logout') }}">
+        <button type="submit" class="logout-btn">Logout</button>
+    </form>
+</body>
+</html>
