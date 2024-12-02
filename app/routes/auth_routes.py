@@ -3,20 +3,14 @@ from app.forms import RegistrationForm, LoginForm
 from app.models import User
 from app import db, s
 from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.utils import secure_filename
 from itsdangerous import SignatureExpired
 from flask_mail import Message
 from app import mail, sender_email, captcha
 from datetime import datetime, timedelta
-from app.models import Requests
 import re
 import random
-import os
 
 auth_bp = Blueprint('auth', __name__)
-
-# Configure upload folder and allowed extensions
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 
 show_captcha = False
 
@@ -65,7 +59,7 @@ def like_old_password(new_password, old_password):
 
 def validate_email(email):
     pattern = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
-    return re.match(pattern, email) and email < 100
+    return re.match(pattern, email) and len(email) < 100
 
 
 def validate_name(name):
@@ -170,6 +164,9 @@ def login():
     if form.validate_on_submit():  # Check if form is valid and submitted
         email = form.email.data
         password = form.password.data
+        if not validate_email(email):
+            flash("Invalid email format, try again!")
+            render_template('login.html', captcha=new_captcha_dict, form=form, show_captcha=show_captcha)
         user = User.query.filter_by(email=email).first()
 
         if user:
@@ -269,9 +266,8 @@ def verify_code():
             session.pop('verification_code', None)  # Remove verification code from session
             if session['user_id'] == 33:  # Admin ID
                 return redirect(url_for('admin.list_requests'))  # Redirect admin to list_requests
-                #return render_template('listRequests.html')
 
-            return redirect(url_for('auth.request_evaluation'))  # Redirect to the target page
+            return redirect(url_for('user.request_evaluation'))  # Redirect to the target page
         else:
             flash('Incorrect code. Please try again.', 'danger')
 
@@ -316,58 +312,3 @@ def reset_password(token):
             return redirect(url_for('auth.login'))
 
     return render_template('resetPassword.html', token=token)
-
-
-@auth_bp.route('/request-evaluation', methods=['GET', 'POST'])
-def request_evaluation():
-    if 'user_id' not in session:
-        flash('Please log in to access this page.', 'danger')
-        return redirect(url_for('auth.login'))
-
-    if request.method == 'POST':
-        comment = request.form['comment']
-        preferred_contact = request.form['preferred_contact']
-
-        # Handle file upload
-        if 'photo' not in request.files:
-            flash('No file part', 'danger')
-            return redirect(request.url)
-        file = request.files['photo']
-        if file.filename == '':
-            flash('No selected file', 'danger')
-            return redirect(request.url)
-        if file and allowed_file(file.filename):
-            # The secure_filename function sanitises a filename to make it safe for use
-            # it removes dangerous characters (e.g., ../ for path traversal).
-            # also replaces invalid or unsafe characters with underscores.
-            filename = secure_filename(file.filename)
-            file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
-            flash('File successfully uploaded.', 'success')
-        else:
-            flash('Allowed file types are png, jpg, jpeg', 'danger')
-            return redirect(request.url)
-
-        # Save the evaluation request into database
-        new_request = Requests(
-            id=session['user_id'],  # Use the logged-in user's ID from the session
-            comment=comment,
-            contact_method=preferred_contact,
-            filename=filename
-        )
-        try:
-            db.session.add(new_request)
-            db.session.commit()
-            flash('Evaluation request submitted successfully.', 'success')
-        except Exception as e:
-            db.session.rollback()
-            flash('An error occurred while saving your request. Please try again.', 'danger')
-            print(f"Database error: {e}")
-            return redirect(request.url)
-
-        return redirect(url_for('auth.request_evaluation'))
-
-    return render_template('requestEvaluation.html')
-
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
