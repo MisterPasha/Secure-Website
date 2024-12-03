@@ -58,8 +58,14 @@ def verify_security_question():
 
 @email_bp.route('/confirm_email/<token>')
 def confirm_email(token):
+    """
+    Verifies the token used in email confirmation link.
+    If success then set account as verified and proceed to the login page.
+    :param token:
+    :return: web page
+    """
     try:
-        # Verify the token (set expiration time to 1 hour)
+        # Verify the token (set expiration time to 1 hour (e.g. 3600 seconds))
         email = s.loads(token, salt='email-confirm', max_age=3600)
     except SignatureExpired:
         flash('The confirmation link has expired.', 'error')
@@ -69,12 +75,12 @@ def confirm_email(token):
         return redirect(url_for('auth.register'))
 
     # Mark the user as verified in the database
-    user = User.query.filter_by(email=email).first()
+    user = User.query.filter_by(email=email).first()  # Find user by the email
     if user:
         user.is_verified = True
         db.session.commit()
         flash('Your email has been confirmed. You can now log in.')
-        return redirect(url_for('auth.login'))
+        return redirect(url_for('auth.login'))  # redirect to login page
     else:
         flash('User not found.')
-        return redirect(url_for('auth.register'))
+        return redirect(url_for('auth.register'))  # redirect to the register page otherwise

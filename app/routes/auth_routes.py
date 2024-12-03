@@ -16,7 +16,25 @@ show_captcha = False
 
 
 def validate_password(password, email=None, name=None):
-    common_passwords = {"password", "123456", "qwerty", "abc123", "iloveyou", "letmein", "welcome"}
+    """
+    Validates password for the strong password format. If has vulnerability in the password then returns message
+    with an advice of what needs to be improved. Otherwise returns True
+    :param password
+    :param email
+    :param name
+    :return: String or Boolean
+    """
+
+    # List of common passwords
+    common_passwords = {
+        "password", "123456", "qwerty", "abc123", "iloveyou", "letmein", "welcome",
+        "admin", "123456789", "12345678", "12345", "1234", "111111", "123123",
+        "654321", "000000", "1q2w3e4r", "sunshine", "monkey", "football",
+        "master", "shadow", "dragon", "baseball", "superman", "trustno1",
+        "michael", "password1", "123qwe", "qwertyuiop", "1qaz2wsx", "asdfghjkl",
+        "zxcvbnm", "987654321", "qazwsx", "password123", "welcome1", "iloveyou1",
+        "1q2w3e", "654321", "123321", "abc12345", "qwerty123", "loveyou"
+    }
     # Check minimum length
     if len(password) < 12:  # Increase minimum length for better security
         return "Password must be at least 12 characters long."
@@ -52,40 +70,77 @@ def validate_password(password, email=None, name=None):
 
 
 def like_old_password(new_password, old_password):
-    hash = generate_password_hash("heyhey")
-    print(f"Hashes: {check_password_hash('heyhey', hash)}")
+    """
+    Designed to match existing password in the Database with new password.
+    Used during password recovery
+    :param new_password:
+    :param old_password:
+    :return: boolean
+    """
     return check_password_hash(old_password, new_password)
 
 
 def validate_email(email):
+    """
+    Validation for the email input during registration and login.
+    Is used to match strings that consist only of valid email format string (e.g. example.mail.uk)
+    Spaces and length longer than 100 characters are not allowed either
+    :param email:
+    :return: boolean
+    """
     pattern = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
     return re.match(pattern, email) and len(email) < 100
 
 
 def validate_name(name):
+    """
+    Validation for the name input during registering.
+    Is used to match strings that consist only of letters (both uppercase and lowercase)
+    No spaces are allowed either
+    :param name:
+    :return: boolean
+    """
     return re.match(r'^[a-zA-Z]+$', name)
 
 
 def validate_phone(phone):
+    """
+    Validation for the phone number input during registration.
+    Is used to match strings that consist only 10 to 15 digits with optional '+' sign
+    :param phone:
+    :return: boolean
+    """
     return re.match(r'^\+?[0-9]{10,15}$', phone)
 
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
+    """
+    This function performs registering process.
+    Gathers User input from the fields, validates input, encrypts password and security answers,
+    adds data to the Database, and sends confirmation email.
+    :return: web page
+    """
+
+    # Set of questions for Security Question 1
     sec_questions1 = {
         'q1': 'What was the name of your first pet?',
         'q2': 'What is your favourite dish?',
         'q3': 'What was the name of your elementary school?',
         'q4': 'In what city were you born?'
     }
+    # Set of questions for Security Question 2
     sec_questions2 = {
         'q1': 'What is your mother’s maiden name?',
         'q2': 'What is your favorite book or movie??',
         'q3': 'What is your dream job?',
         'q4': 'What was the name of your childhood best friend?'
     }
+
+    # Introduce RegistrationForm object
     form = RegistrationForm()
-    if request.method == 'POST':
+
+    if request.method == 'POST':  # Gather data from the User inputs
         email = form.email.data
         password = form.password.data
         name = form.name.data
@@ -102,9 +157,11 @@ def register():
         if existing_user:
             flash("An account with this email already exists.")
             return redirect(url_for('auth.register'))
+        # Validate email for valid format
         elif not validate_email(email):
             flash("Please enter a valid email address (e.g. example@email.uk)")
             return redirect(url_for('auth.register'))
+        # Validate name
         elif not validate_name(name):
             flash("Please enter only First Name")
             return redirect(url_for('auth.register'))
@@ -116,7 +173,7 @@ def register():
             flash(message)
             return redirect(url_for('auth.register'))
 
-        # Hash the password
+        # Hash the password and security answers
         hashed_password = generate_password_hash(password)  # Salt is automatically applied
         hashed_security_answer1 = generate_password_hash(security_answer1)  # Salt is automatically applied
         hashed_security_answer2 = generate_password_hash(security_answer2)  # Salt is automatically applied
@@ -158,42 +215,53 @@ def register():
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
+    """
+    This function performs login process
+    Gathers User input from the fields, validates input, creates CAPTCHA, redirects user,
+    sends email with the code.
+    :return: web page
+    """
     form = LoginForm()
     new_captcha_dict = captcha.create()
     global show_captcha
     if form.validate_on_submit():  # Check if form is valid and submitted
         email = form.email.data
         password = form.password.data
+        # Validate email address for valid format
         if not validate_email(email):
             flash("Invalid email format, try again!")
             render_template('login.html', captcha=new_captcha_dict, form=form, show_captcha=show_captcha)
-        user = User.query.filter_by(email=email).first()
 
+        # Check if user exists
+        user = User.query.filter_by(email=email).first()
         if user:
-            if not user.is_verified:
+            if not user.is_verified:  # Check if user's email address is verified
                 flash('Please verify your email before logging in.', 'warning')
                 return redirect(url_for('auth.register'))
             # Check if the account is locked
             elif user.lockout_until and datetime.utcnow() < user.lockout_until and not show_captcha:
+                # if user is locked then show captcha
                 show_captcha = True
+                # Get remaining time of lockout
                 lockout_time_remaining = (user.lockout_until - datetime.utcnow()).seconds
                 flash(f"Your account is locked. Try again in {lockout_time_remaining} seconds.", 'danger')
                 flash(f"Solve CAPTCHA to unlock your account")
                 return render_template('login.html', captcha=new_captcha_dict, form=form, show_captcha=show_captcha)
 
             if user.lockout_until and datetime.utcnow() < user.lockout_until and show_captcha:
+                # Create CAPTCHA
                 new_captcha_dict = captcha.create()
-                print("captcha dict: ", new_captcha_dict)
+                # Get remaining time of lockout and notify
                 lockout_time_remaining = (user.lockout_until - datetime.utcnow()).seconds
                 flash(f"Your account is locked. Try again in {lockout_time_remaining} seconds.", 'danger')
                 if request.method == 'POST':
                     # Verify CAPTCHA input
                     c_hash = request.form.get('captcha-hash')
                     c_text = request.form.get('captcha-text')
-                    print(f"Request form: {request.form}")
-                    if captcha.verify(c_text, c_hash):
+                    # check captcha hash and user input
+                    if captcha.verify(c_text, c_hash):  # if success
                         user.lockout_until = None  # Unlock account
-                        db.session.commit()
+                        db.session.commit()  # Add to Database
                         show_captcha = False
                         flash('CAPTCHA solved! Please try logging in again.', 'success')
                         return render_template('login.html', captcha=new_captcha_dict, form=form, show_captcha=show_captcha)
@@ -214,18 +282,17 @@ def login():
                 verification_code = random.randint(100000, 999999)
                 session['verification_code'] = verification_code  # Store in session
                 session['user_id'] = user.id  # Store user ID in session for the next step
-                print(f"Session in auth: {session}")
 
-                # Send the verification code via email
-                msg = Message('Your Login Verification Code',
+                # Send the verification code by email
+                msg = Message('Your Login Verification Code',  # Email subject text
                               sender=sender_email, recipients=[email])
-                msg.body = f'Your verification code is: {verification_code}'
-                mail.send(msg)
+                msg.body = f'Your verification code is: {verification_code}'  # Body of the email
+                mail.send(msg)  # Sends email
 
                 flash('A verification code has been sent to your email. Please check your inbox.', 'info')
                 return redirect(url_for('auth.verify_code'))  # Redirect to the code verification page
             else:
-                # Increment failed attempts
+                # Increment failed attempts if password is incorrect
                 user.failed_attempts += 1
 
                 # Lock the account if attempts exceed 5
@@ -247,12 +314,21 @@ def login():
 
 @auth_bp.route('/logout')
 def logout():
+    """
+    Logout user from the session
+    :return:
+    """
     session.clear()  # Clear all session data
     return redirect(url_for('auth.login'))
 
 
 @auth_bp.route('/verify-code', methods=['GET', 'POST'])
 def verify_code():
+    """
+    Function that verifies verification code and redirects user to the "Request Evaluation" page
+    or "List Requests" page (if admin credentials).
+    :return: web page
+    """
     if 'verification_code' not in session or 'user_id' not in session:
         flash('Session expired. Please log in again.', 'warning')
         return redirect(url_for('auth.login'))
@@ -269,9 +345,10 @@ def verify_code():
 
             return redirect(url_for('user.request_evaluation'))  # Redirect to the target page
         else:
-            flash('Incorrect code. Please try again.', 'danger')
+            flash('Incorrect code. Please login again.', 'danger')
+            session.pop('verification_code', None)  # Remove verification code from session
 
-    return render_template('verifyCode.html')
+    return redirect(url_for('auth.login'))
 
 
 @auth_bp.route('/resetPassword/<token>', methods=['GET', 'POST'])
