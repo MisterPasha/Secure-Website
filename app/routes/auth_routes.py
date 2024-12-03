@@ -353,6 +353,11 @@ def verify_code():
 
 @auth_bp.route('/resetPassword/<token>', methods=['GET', 'POST'])
 def reset_password(token):
+    """
+    Validates answer for security question, validates new password, and resets the password
+    :param token: Unique token included in the emailed link for verification
+    :return: web page
+    """
     try:
         # Verify the token
         email = s.loads(token, salt='password-recovery', max_age=3600)  # Token expires in 1 hour

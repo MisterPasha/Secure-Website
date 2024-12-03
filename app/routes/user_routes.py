@@ -12,15 +12,12 @@ allowed_tags = {
     'b', 'i', 'u', 'em', 'strong', 'mark', 'small',  # Text formatting
     'p', 'div', 'span',                             # Structural
     'ul', 'ol', 'li',                               # Lists
-    'a', 'abbr', 'code', 'pre', 'q',                # Inline elements
-    'img'                                           # Images
+    'a', 'abbr', 'code', 'pre', 'q'                # Inline elements
 }
 
 # set of allowed attributes
 allowed_attrs = {
     'a': ['href', 'title', 'target'],               # Links
-    'img': ['src', 'alt', 'width', 'height'],       # Images
-    '*': ['style', 'class', 'id']                   # General attributes
 }
 # Configure upload folder and allowed extensions
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
@@ -44,9 +41,6 @@ def request_evaluation():
         # Sanitise the comment
         sanitised_comment = bleach.clean(comment, tags=allowed_tags, attributes=allowed_attrs)
 
-        print(comment)
-        print(sanitised_comment)
-
         # Handle file upload
         if 'photo' not in request.files:
             flash('No file part', 'danger')
@@ -68,7 +62,7 @@ def request_evaluation():
 
         # Save the evaluation request into database
         new_request = Requests(
-            id=session['user_id'],  # Use the logged-in user's ID from the session
+            id=session['user_id'],  # logged-in user's ID from the session
             comment=sanitised_comment,
             contact_method=preferred_contact,
             filename=filename

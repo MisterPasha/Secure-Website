@@ -11,15 +11,22 @@ email_bp = Blueprint('email', __name__)
 
 @email_bp.route('/passwordRecovery', methods=['GET', 'POST'])
 def password_recovery():
+    """
+    During password recovery checks if entered email exists
+    if it does - redirects user to answer the security question
+    if it doesn't - highlight an error
+    :return: web page
+    """
     if request.method == 'POST':
-        email = request.form['email']
+        email = request.form['email']  # user input for email
 
         # Check if the user exists in the database
         user = User.query.filter_by(email=email).first()
         if user:
-            # Render the form to verify the security question
+            # Redirect to verify the security question
             return render_template('verifySecurityQuestion.html', email=email, question=user.security_question1)
         else:
+            # If user does not exist then error
             flash('Email address not found.', 'danger')
             return redirect(url_for('email.password_recovery'))
 
@@ -28,15 +35,20 @@ def password_recovery():
 
 @email_bp.route('/verifySecurityQuestion', methods=['POST'])
 def verify_security_question():
+    """
+    Verifies entered answer for security question with the one stored in database
+    :return: web page
+    """
+
+    # Safe user input
     email = request.form['email']
     security_answer = request.form['security_answer']
 
     # Retrieve the user from the database
     user = User.query.filter_by(email=email).first()
-    if user:
-        print(user.security_answer1)
-        # Check if the security answer is correct
-        if check_password_hash(user.security_answer1, security_answer):
+    if user:  # If user exists
+        # Check if the security answer is correct by comparing hashed stored answer on DB with user entry
+        if check_password_hash(user.security_answer1, security_answer):  # If security answer is correct
             # Generate a token for the password reset link
             token = s.dumps(email, salt='password-recovery')
 
@@ -48,10 +60,10 @@ def verify_security_question():
 
             flash('A password reset link has been sent to your email address.', 'info')
             return redirect(url_for('auth.login'))
-        else:
+        else:  # If security answer is incorrect
             flash('Incorrect answer to the security question.', 'danger')
             return redirect(url_for('email.password_recovery'))
-    else:
+    else:  # If user does not exist
         flash('User not found.', 'danger')
         return redirect(url_for('email.password_recovery'))
 
