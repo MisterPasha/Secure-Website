@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app
+from flask import Blueprint, render_template, redirect, url_for, flash, session
 from app.models import Requests
 
 admin_bp = Blueprint('admin', __name__)

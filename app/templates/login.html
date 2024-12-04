@@ -122,7 +122,7 @@
             {% endif %}
         {% endwith %}
 
-        <form  action="{{ url_for('auth.login') }}" method="POST">
+        <form  action="{{ url_for('auth.login') }}" method="POST" autocomplete="off">
             {{ form.hidden_tag() }}
 
             <p>

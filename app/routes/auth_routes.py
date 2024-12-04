@@ -165,9 +165,11 @@ def register():
         elif not validate_name(name):
             flash("Please enter only First Name")
             return redirect(url_for('auth.register'))
+        # validate phone number
         elif not validate_phone(phone):
             flash("Please enter a valid phone number")
             return redirect(url_for('auth.register'))
+        # validate password
         elif validate_password(password, email, name) is not True:
             message = validate_password(password, email, name)
             flash(message)
@@ -200,7 +202,7 @@ def register():
 
         # Send the verification email
         msg = Message('Confirm Your Email', sender=sender_email, recipients=[email])
-        link = url_for('email.confirm_email', token=token, _external=True)
+        link = url_for('email.confirm_email', token=token, _external=True)  # Generate link
         msg.body = f'Thank you for registering at Lovejoy! Please click the link to verify your email: {link}'
         mail.send(msg)
 
@@ -221,9 +223,9 @@ def login():
     sends email with the code.
     :return: web page
     """
-    form = LoginForm()
-    new_captcha_dict = captcha.create()
-    global show_captcha
+    form = LoginForm()  # Introduce Login Form
+    new_captcha_dict = captcha.create()  # create captcha object
+    global show_captcha  # boolean
     if form.validate_on_submit():  # Check if form is valid and submitted
         email = form.email.data
         password = form.password.data
@@ -302,10 +304,10 @@ def login():
                 else:
                     attempts_remaining = 5 - user.failed_attempts
                     flash(f"Invalid credentials. You have {attempts_remaining} attempts remaining.", 'danger')
-
+                # update failed_attempts and lockout_until in the Database
                 db.session.commit()
                 return render_template('login.html', captcha=new_captcha_dict, form=form, show_captcha=show_captcha)
-        else:
+        else:  # if user does not exist in the database
             flash('User not found. Please register.', 'danger')
             return redirect(url_for('auth.register'))
 
@@ -315,7 +317,7 @@ def login():
 @auth_bp.route('/logout')
 def logout():
     """
-    Logout user from the session
+    Logout user from the session and redirect to login page
     :return:
     """
     session.clear()  # Clear all session data
@@ -329,6 +331,7 @@ def verify_code():
     or "List Requests" page (if admin credentials).
     :return: web page
     """
+    # if verification has been used or expired then display an error and redirect to login page
     if 'verification_code' not in session or 'user_id' not in session:
         flash('Session expired. Please log in again.', 'warning')
         return redirect(url_for('auth.login'))
@@ -368,8 +371,11 @@ def reset_password(token):
     if request.method == 'POST':
         new_password = request.form['password']
         security_answer = request.form['security_answer']
+
+        # find user by email
         user = User.query.filter_by(email=email).first()
 
+        # if user exists
         if user:
             # Validate new password
             if validate_password(new_password, email, user.name) is not True:
@@ -380,6 +386,7 @@ def reset_password(token):
             elif like_old_password(new_password, user.password):
                 flash("Your new password cannot be like your old password, please change")
                 return redirect(url_for('auth.reset_password', token=token))
+            # Check security answer for correctness
             elif not check_password_hash(user.security_answer2, security_answer):
                 flash("Incorrect Security Answer, please try again")
                 return redirect(url_for('auth.reset_password', token=token))

@@ -53,7 +53,7 @@ def verify_security_question():
             token = s.dumps(email, salt='password-recovery')
 
             # Send the reset email
-            link = url_for('auth.reset_password', token=token, _external=True)
+            link = url_for('auth.reset_password', token=token, _external=True)  # generate link
             msg = Message('Password Reset Request', sender=sender_email, recipients=[email])
             msg.body = f'Click the following link to reset your password: {link}'
             mail.send(msg)

@@ -68,10 +68,12 @@ def request_evaluation():
             filename=filename
         )
         try:
+            # add new request to the database
             db.session.add(new_request)
             db.session.commit()
             flash('Evaluation request submitted successfully.', 'success')
         except Exception as e:
+            # Rollback if error occurred
             db.session.rollback()
             flash('An error occurred while saving your request. Please try again.', 'danger')
             print(f"Database error: {e}")
@@ -83,4 +85,9 @@ def request_evaluation():
 
 
 def allowed_file(filename):
+    """
+    Checks if extension of the file chosen is in range of allowed extensions (e.g. png, jpg, jpeg)
+    :param filename: String
+    :return: boolean
+    """
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
