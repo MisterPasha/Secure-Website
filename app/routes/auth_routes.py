@@ -31,8 +31,8 @@ def validate_password(password, email=None, name=None):
         "admin", "123456789", "12345678", "12345", "1234", "111111", "123123",
         "654321", "000000", "1q2w3e4r", "sunshine", "monkey", "football",
         "master", "shadow", "dragon", "baseball", "superman", "trustno1",
-        "michael", "password1", "123qwe", "qwertyuiop", "1qaz2wsx", "asdfghjkl",
-        "zxcvbnm", "987654321", "qazwsx", "password123", "welcome1", "iloveyou1",
+        "michael", "password1", "123qwe", "qwerty", "1qaz2wsx", "asdfg",
+        "zxcvb", "98765", "qazwsx", "password123", "welcome1", "iloveyou1",
         "1q2w3e", "654321", "123321", "abc12345", "qwerty123", "loveyou"
     }
     # Check minimum length
@@ -54,10 +54,11 @@ def validate_password(password, email=None, name=None):
     elif re.search(r"(.)\1{2,}", password):  # Prevent more than 2 repeated characters
         return "Password must not contain sequences of more than 2 repeated characters."
     # Check for common passwords (using a sample list)
-    elif password.lower() in common_passwords:
-        return "Password is too common. Please choose a stronger password."
+    for passw in common_passwords:
+        if passw in password.lower():
+            return "Password is too common. Please choose a stronger password."
     # Check for password containing email part
-    elif email:
+    if email:
         local_part = email.split('@')[0]
         if local_part.lower() in password.lower():
             return "Password must not contain parts of your email address."
@@ -351,7 +352,8 @@ def verify_code():
             flash('Incorrect code. Please login again.', 'danger')
             session.pop('verification_code', None)  # Remove verification code from session
 
-    return redirect(url_for('auth.login'))
+    #return redirect(url_for('auth.verify_code'))
+    return render_template('verifyCode.html')
 
 
 @auth_bp.route('/resetPassword/<token>', methods=['GET', 'POST'])
